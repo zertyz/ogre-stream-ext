@@ -1,0 +1,27 @@
+[package]
+name = "ogre-stream-ext"
+version = "0.1.0"
+edition = "2021"
+description   = "`futures` shortcuts with ergonomic extensions to unlock the full power of Streams in Rust"
+keywords      = ["reactive-programming", "event-driven", "streams", "extensions", "stream-ext"]
+categories    = ["asynchronous", "concurrency", "rust-patterns", "algorithms"]
+readme        = "README.md"
+authors       = ["Luiz Silveira <zertyz@gmail.com>"]
+homepage      = "https://github.com/zertyz/ogre-stream-ext"
+repository    = "https://github.com/zertyz/ogre-stream-ext"
+documentation = "https://docs.rs/ogre-stream-ext/"
+license       = "Unlicense"
+
+[workspace]
+
+[dependencies]
+tokio = { version = "1.46", default-features = false, features = ["rt"] }
+futures = { version = "0.3", default-features = false }
+async-io = { version = "2.5", default-features = false }
+
+# deprecated crates -- to be replaced soon
+futures-time = { version = "3.0", default-features = false } # inneficient for our use when throttling
+
+[dev-dependencies]
+futures = { version = "0.3", features = ["default"] }
+tokio = { version = "1.46", features = ["full"] }

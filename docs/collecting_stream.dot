@@ -1,0 +1,7 @@
+digraph G {
+    rankdir=LR;
+    "Generator" -> ".collect() element 1" -> "Transformation\n(from Vec to a new Vec)";
+    "Generator" -> ".collect() element 2" -> "Transformation\n(from Vec to a new Vec)";
+    "Generator" -> ".collect() element n" -> "Transformation\n(from Vec to a new Vec)";
+    "Transformation\n(from Vec to a new Vec)" -> "Re-generating a Stream\nfrom the Vec" -> "Downstream";
+}
