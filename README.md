@@ -1,11 +1,11 @@
-# `ogre-stream-ext`: `futures` shortcuts with ergonomic extensions to unlock the full power of Streams in Rust
+# `futures` shortcuts with ergonomic extensions to unlock the full power of Streams in Rust
 
-This crate extends the `futures` Streams, adding the needed functionalities to enable useful and neat patterns when working with Streams for
+This crate extends the `futures` Streams, adding the necessary functionalities to enable useful and neat patterns when working with Streams for
 event driven and reactive programming.
 
 
 ## Alpha Status
-We are still in early infancy with still some unstable & experimental APIs, missing docs, and even non-optimized implementations.
+We are still in early infancy with still some unstable & experimental APIs, missing docs, and even not fully optimized implementations.
 
 
 ## Additional "administrative events" callbacks:
