@@ -12,3 +12,6 @@ pub use timeout_ext::*;
 
 mod try_enumerate_ext;
 pub use try_enumerate_ext::*;
+
+mod try_count_ext;
+pub use try_count_ext::*;

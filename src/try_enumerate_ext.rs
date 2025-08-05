@@ -36,8 +36,8 @@ impl<S, Ok, Err> TryEnumerateAllExt<Ok, Err> for S where S: Stream<Item=Result<O
 
 #[cfg(test)]
 mod tests {
-    use std::future;
     use super::*;
+    use std::future;
     use futures::stream;
     use tokio::pin;
 

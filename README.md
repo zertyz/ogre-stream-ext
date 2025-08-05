@@ -1,7 +1,7 @@
-# `futures` shortcuts with ergonomic extensions to unlock the full power of Streams in Rust
+# `futures` & `futures-util` shortcuts with ergonomic extensions to unlock the full power of Streams in Rust
 
-This crate extends the `futures` Streams, adding the necessary functionalities to enable useful and neat patterns when working with Streams for
-event driven and reactive programming.
+This crate extends the Stream support offered by both `futures` & `futures-util`, adding the necessary functionalities to enable useful and neat patterns when working with Streams for
+event driven and reactive programming, with fill support for error handling patterns.
 
 
 ## Alpha Status
@@ -22,3 +22,4 @@ We are still in early infancy with still some unstable & experimental APIs, miss
                   please see the benchmarks -- and yet more flexible in regard to keeping up the pace if temporary slowdowns occur.
  * `try_` extensions -- multiple new `.try_` combinators simply missing from the `features::TryStreamExt` extension, such as:
    * `.try_enumerate()` & `.try_enumerate_all()`
+   * `.try_count()`
