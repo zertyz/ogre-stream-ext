@@ -76,9 +76,9 @@ where
 
             Poll::Ready(None) => {
                 // The inner stream is done. If we have not yet called `complete_fn`, do so now.
-                let finalized = this.finalized.fetch_update(Ordering::SeqCst, Ordering::SeqCst, |_| Some(true)).unwrap_or_default();
-                if !finalized {
-                    if let Some(complete_fn) = this.complete_fn.take() {
+                if let Some(complete_fn) = this.complete_fn.take() {
+                    let finalized = this.finalized.fetch_update(Ordering::SeqCst, Ordering::SeqCst, |_| Some(true)).unwrap_or_default();
+                    if !finalized {
                         complete_fn();
                     }
                 }
@@ -99,9 +99,9 @@ where
     fn drop(&mut self) {
         // If we never reached the “finished” state, that means the user dropped the stream early --
         // so we call `cancel_fn` if it’s still present.
-        let finalized = self.finalized.fetch_update(Ordering::SeqCst, Ordering::SeqCst, |_| Some(true)).unwrap_or_default();
-        if !finalized {
-            if let Some(cancel_fn) = self.cancel_fn.take() {
+        if let Some(cancel_fn) = self.cancel_fn.take() {
+            let finalized = self.finalized.fetch_update(Ordering::SeqCst, Ordering::SeqCst, |_| Some(true)).unwrap_or_default();
+            if !finalized {
                 cancel_fn();
             }
         }
