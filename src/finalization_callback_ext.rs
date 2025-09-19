@@ -8,6 +8,7 @@ use std::{
     task::{Context, Poll},
 };
 use std::future::Future;
+use std::sync::atomic::{AtomicBool, Ordering};
 use futures::Stream;
 
 /// A Stream wrapper that calls a closure once the Stream either ends or is cancelled:
@@ -19,6 +20,9 @@ where
 {
     inner: S,
     finalization_fn: Option<FinalizationFn>,
+    /// Needed to avoid double-firing when the stream ends gracefully in one thread and
+    /// is immediately dropped by another
+    finalized: AtomicBool,
 }
 
 impl<S, FinalizationFn, FnFut> StreamWithFinalizationCallback<S, FinalizationFn, FnFut>
@@ -34,6 +38,7 @@ where
         StreamWithFinalizationCallback {
             inner,
             finalization_fn: Some(finalization_fn),
+            finalized: AtomicBool::new(false),
         }
     }
 }
@@ -62,8 +67,10 @@ where
 
             Poll::Ready(None) => {
                 // The inner stream is done. If we have not yet called `finalization_fn`, do so now.
-                if let Some(finalization_fn) = this.finalization_fn.take() {
-                    tokio::runtime::Handle::current().spawn(finalization_fn());
+                let finalized = this.finalized.fetch_update(Ordering::SeqCst, Ordering::SeqCst, |_| Some(true)).is_ok();
+                if !finalized {
+                    this.finalization_fn.take()
+                        .map(|finalization_fn| tokio::runtime::Handle::current().spawn(finalization_fn()));
                 }
                 Poll::Ready(None)
             }
@@ -82,10 +89,13 @@ where
     fn drop(&mut self) {
         // If we never reached the “finished” state, that means the user dropped the stream early —
         // so we call `finalization_fn` if it’s still present.
-        if let Some(finalization_fn) = self.finalization_fn.take() {
-            let handle = tokio::runtime::Handle::current();
-            let _guard = handle.enter();
-            handle.spawn(finalization_fn());
+        let finalized = self.finalized.fetch_update(Ordering::SeqCst, Ordering::SeqCst, |_| Some(true)).is_ok();
+        if !finalized {
+            if let Some(finalization_fn) = self.finalization_fn.take() {
+                let handle = tokio::runtime::Handle::current();
+                let _guard = handle.enter();
+                handle.spawn(finalization_fn());
+            }
         }
     }
 }

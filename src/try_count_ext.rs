@@ -1,7 +1,7 @@
 //! Adds `.try_count()` to Stream's, not provided by either `futures` nor `futures-util` crates
 
 use std::future::Future;
-use futures::{StreamExt, stream::Map, Stream, TryStreamExt, TryStream};
+use futures::{TryStreamExt, TryStream};
 
 pub trait TryCountExt: TryStream + Sized {
 

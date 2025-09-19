@@ -7,7 +7,7 @@ use std::{
     pin::Pin,
     task::{Context, Poll},
 };
-
+use std::sync::atomic::{AtomicBool, Ordering};
 use futures::Stream;
 
 /// A Stream wrapper that can call two different closures:
@@ -23,10 +23,12 @@ where
     FCancel: FnOnce(),
 {
     inner: S,
-    complete_cb: Option<FComplete>,
-    cancel_cb: Option<FCancel>,
+    complete_fn: Option<FComplete>,
+    cancel_fn: Option<FCancel>,
     /// Flag: have we already called `complete_cb`? Once `true`, we must not call `cancel_cb`.
-    finished: bool,
+    /// Atomic is used to avoid double-firing when the stream ends gracefully in one thread and
+    /// is immediately dropped by another
+    finalized: AtomicBool,
 }
 
 impl<S, FComplete, FCancel> StreamWithFinalizationCallbacks<S, FComplete, FCancel>
@@ -43,9 +45,9 @@ where
     pub fn new(inner: S, complete_cb: FComplete, cancel_cb: FCancel) -> Self {
         StreamWithFinalizationCallbacks {
             inner,
-            complete_cb: Some(complete_cb),
-            cancel_cb: Some(cancel_cb),
-            finished: false,
+            complete_fn: Some(complete_cb),
+            cancel_fn: Some(cancel_cb),
+            finalized: AtomicBool::new(false),
         }
     }
 }
@@ -73,14 +75,12 @@ where
             Poll::Ready(Some(item)) => Poll::Ready(Some(item)),
 
             Poll::Ready(None) => {
-                // The inner stream is done. If we have not yet called `complete_cb`, do so now.
-                if !this.finished {
-                    if let Some(cb) = this.complete_cb.take() {
-                        cb();
+                // The inner stream is done. If we have not yet called `complete_fn`, do so now.
+                let finalized = this.finalized.fetch_update(Ordering::SeqCst, Ordering::SeqCst, |_| Some(true)).is_ok();
+                if !finalized {
+                    if let Some(complete_fn) = this.complete_fn.take() {
+                        complete_fn();
                     }
-                    this.finished = true;
-                    // Clear the cancellation callback as well, so Drop won't fire it.
-                    this.cancel_cb.take();
                 }
                 Poll::Ready(None)
             }
@@ -97,14 +97,14 @@ where
     FCancel: FnOnce(),
 {
     fn drop(&mut self) {
-        // If we never reached the “finished” state, that means the user dropped the stream early —
-        // so we call `cancel_cb` if it’s still present.
-        if !self.finished {
-            if let Some(cancel_cb) = self.cancel_cb.take() {
-                cancel_cb();
+        // If we never reached the “finished” state, that means the user dropped the stream early --
+        // so we call `cancel_fn` if it’s still present.
+        let finalized = self.finalized.fetch_update(Ordering::SeqCst, Ordering::SeqCst, |_| Some(true)).is_ok();
+        if !finalized {
+            if let Some(cancel_fn) = self.cancel_fn.take() {
+                cancel_fn();
             }
         }
-        // (We do NOT call complete_cb here, because “complete” only happens on real EOF)
     }
 }
 
