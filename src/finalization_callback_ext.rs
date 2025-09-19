@@ -67,7 +67,7 @@ where
 
             Poll::Ready(None) => {
                 // The inner stream is done. If we have not yet called `finalization_fn`, do so now.
-                let finalized = this.finalized.fetch_update(Ordering::SeqCst, Ordering::SeqCst, |_| Some(true)).is_ok();
+                let finalized = this.finalized.fetch_update(Ordering::SeqCst, Ordering::SeqCst, |_| Some(true)).unwrap_or_default();
                 if !finalized {
                     this.finalization_fn.take()
                         .map(|finalization_fn| tokio::runtime::Handle::current().spawn(finalization_fn()));
@@ -89,7 +89,7 @@ where
     fn drop(&mut self) {
         // If we never reached the “finished” state, that means the user dropped the stream early —
         // so we call `finalization_fn` if it’s still present.
-        let finalized = self.finalized.fetch_update(Ordering::SeqCst, Ordering::SeqCst, |_| Some(true)).is_ok();
+        let finalized = self.finalized.fetch_update(Ordering::SeqCst, Ordering::SeqCst, |_| Some(true)).unwrap_or_default();
         if !finalized {
             if let Some(finalization_fn) = self.finalization_fn.take() {
                 let handle = tokio::runtime::Handle::current();
